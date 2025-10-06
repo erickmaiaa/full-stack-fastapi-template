@@ -1,27 +1,31 @@
-import { IconButton } from "@chakra-ui/react"
-import { BsThreeDotsVertical } from "react-icons/bs"
-import type { UserPublic } from "@/client"
-import DeleteUser from "../Admin/DeleteUser"
-import EditUser from "../Admin/EditUser"
-import { MenuContent, MenuRoot, MenuTrigger } from "../ui/menu"
+import { BsThreeDotsVertical } from "react-icons/bs";
+import type { UserPublic } from "@/client";
+import DeleteUser from "../Admin/DeleteUser";
+import EditUser from "../Admin/EditUser";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
 
 interface UserActionsMenuProps {
-  user: UserPublic
-  disabled?: boolean
+  user: UserPublic;
+  disabled?: boolean;
 }
 
 export const UserActionsMenu = ({ user, disabled }: UserActionsMenuProps) => {
   return (
-    <MenuRoot>
-      <MenuTrigger asChild>
-        <IconButton variant="ghost" color="inherit" disabled={disabled}>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" disabled={disabled}>
           <BsThreeDotsVertical />
-        </IconButton>
-      </MenuTrigger>
-      <MenuContent>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="space-y-2">
         <EditUser user={user} />
         <DeleteUser id={user.id} />
-      </MenuContent>
-    </MenuRoot>
-  )
-}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};

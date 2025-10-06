@@ -1,143 +1,202 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
-  Button,
-  DialogActionTrigger,
-  DialogTitle,
-  Input,
-  Text,
-  VStack,
-} from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
-import { FaPlus } from "react-icons/fa"
+  type SubmitHandler,
+  useForm,
+  type UseFormReturn,
+} from "react-hook-form";
+import { FaPlus } from "react-icons/fa";
 
-import { type ItemCreate, ItemsService } from "@/client"
-import type { ApiError } from "@/client/core/ApiError"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { type ItemCreate, ItemsService } from "@/client";
+import type { ApiError } from "@/client/core/ApiError";
+import { Button } from "@/components/ui/button";
 import {
-  DialogBody,
-  DialogCloseTrigger,
+  Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogRoot,
+  DialogTitle,
   DialogTrigger,
-} from "../ui/dialog"
-import { Field } from "../ui/field"
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import useCustomToast from "@/hooks/useCustomToast";
+import { useIsMobile } from "@/hooks/useMobile";
+import { handleError } from "@/utils";
 
-const AddItem = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast } = useCustomToast()
+import { Field } from "../ui/field";
+
+interface AddItemFormProps {
+  form: UseFormReturn<ItemCreate>;
+  onSubmit: SubmitHandler<ItemCreate>;
+}
+
+const AddItemForm = ({ form, onSubmit }: AddItemFormProps) => {
   const {
     register,
     handleSubmit,
-    reset,
-    formState: { errors, isValid, isSubmitting },
-  } = useForm<ItemCreate>({
+    formState: { errors },
+  } = form;
+
+  return (
+    <form id="add-item-form" onSubmit={handleSubmit(onSubmit)}>
+      <div className="space-y-4 p-4 sm:p-0">
+        <Field>
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            {...register("title", {
+              required: "Title is required.",
+              minLength: {
+                value: 3,
+                message: "Title must be at least 3 characters.",
+              },
+            })}
+            type="text"
+            autoComplete="off"
+          />
+          {errors.title && (
+            <p className="text-sm text-red-500">{errors.title.message}</p>
+          )}
+        </Field>
+
+        <Field>
+          <Label htmlFor="description">Description</Label>
+          <Input
+            id="description"
+            {...register("description", {
+              required: "Description is required.",
+              minLength: {
+                value: 5,
+                message: "Description must be at least 5 characters.",
+              },
+            })}
+            type="text"
+            autoComplete="off"
+          />
+          {errors.description && (
+            <p className="text-sm text-red-500">{errors.description.message}</p>
+          )}
+        </Field>
+      </div>
+    </form>
+  );
+};
+
+const AddItem = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const isDesktop = useIsMobile();
+  const queryClient = useQueryClient();
+  const { showSuccessToast } = useCustomToast();
+  const form = useForm<ItemCreate>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
       title: "",
       description: "",
     },
-  })
+  });
+  const {
+    reset,
+    formState: { isValid, isSubmitting },
+  } = form;
 
   const mutation = useMutation({
     mutationFn: (data: ItemCreate) =>
       ItemsService.createItem({ requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("Item created successfully.")
-      reset()
-      setIsOpen(false)
+      showSuccessToast("Item created successfully.");
+      reset();
+      setIsOpen(false);
     },
     onError: (err: ApiError) => {
-      handleError(err)
+      handleError(err);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: ["items"] });
     },
-  })
+  });
 
   const onSubmit: SubmitHandler<ItemCreate> = (data) => {
-    mutation.mutate(data)
-  }
+    mutation.mutate(data);
+  };
 
-  return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      placement="center"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
-    >
-      <DialogTrigger asChild>
-        <Button value="add-item" my={4}>
-          <FaPlus fontSize="16px" />
-          Add Item
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
+  const TriggerButton = (
+    <Button className="my-4 flex items-center gap-2" size="sm">
+      <FaPlus fontSize="16px" />
+      Add Item
+    </Button>
+  );
+
+  if (!isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Item</DialogTitle>
           </DialogHeader>
-          <DialogBody>
-            <Text mb={4}>Fill in the details to add a new item.</Text>
-            <VStack gap={4}>
-              <Field
-                required
-                invalid={!!errors.title}
-                errorText={errors.title?.message}
-                label="Title"
-              >
-                <Input
-                  {...register("title", {
-                    required: "Title is required.",
-                  })}
-                  placeholder="Title"
-                  type="text"
-                />
-              </Field>
-
-              <Field
-                invalid={!!errors.description}
-                errorText={errors.description?.message}
-                label="Description"
-              >
-                <Input
-                  {...register("description")}
-                  placeholder="Description"
-                  type="text"
-                />
-              </Field>
-            </VStack>
-          </DialogBody>
-
-          <DialogFooter gap={2}>
-            <DialogActionTrigger asChild>
-              <Button
-                variant="subtle"
-                colorPalette="gray"
-                disabled={isSubmitting}
-              >
+          <p className="text-sm text-muted-foreground -mt-2">
+            Fill in the details to add a new item.
+          </p>
+          <AddItemForm form={form} onSubmit={onSubmit} />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isSubmitting}>
                 Cancel
               </Button>
-            </DialogActionTrigger>
+            </DialogClose>
             <Button
-              variant="solid"
               type="submit"
-              disabled={!isValid}
-              loading={isSubmitting}
+              form="add-item-form"
+              disabled={!isValid || isSubmitting}
             >
               Save
             </Button>
           </DialogFooter>
-        </form>
-        <DialogCloseTrigger />
-      </DialogContent>
-    </DialogRoot>
-  )
-}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
-export default AddItem
+  return (
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Add Item</DrawerTitle>
+          <p className="text-sm text-muted-foreground">
+            Fill in the details to add a new item.
+          </p>
+        </DrawerHeader>
+        <AddItemForm form={form} onSubmit={onSubmit} />
+        <DrawerFooter className="pt-2">
+          <Button
+            type="submit"
+            form="add-item-form"
+            disabled={!isValid || isSubmitting}
+          >
+            Save
+          </Button>
+          <DrawerClose asChild>
+            <Button variant="outline" disabled={isSubmitting}>
+              Cancel
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
+export default AddItem;

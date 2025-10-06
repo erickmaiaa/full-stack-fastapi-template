@@ -1,44 +1,26 @@
-import { Button, Center, Flex, Text } from "@chakra-ui/react"
-import { Link } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router";
 
 const NotFound = () => {
   return (
-    <Flex
-      height="100vh"
-      align="center"
-      justify="center"
-      flexDir="column"
-      data-testid="not-found"
-      p={4}
-    >
-      <Flex alignItems="center" zIndex={1}>
-        <Flex flexDir="column" ml={4} align="center" justify="center" p={4}>
-          <Text
-            fontSize={{ base: "6xl", md: "8xl" }}
-            fontWeight="bold"
-            lineHeight="1"
-            mb={4}
-          >
+    <div className="flex items-center min-h-screen px-4 py-12 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+      <div className="w-full space-y-6 text-center">
+        <div className="space-y-3">
+          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl animate-bounce">
             404
-          </Text>
-          <Text fontSize="2xl" fontWeight="bold" mb={2}>
-            Oops!
-          </Text>
-        </Flex>
-      </Flex>
-
-      <Text fontSize="lg" color="gray.600" mb={4} textAlign="center" zIndex={1}>
-        The page you are looking for was not found.
-      </Text>
-      <Center zIndex={1}>
-        <Link to="/">
-          <Button variant="solid" colorScheme="teal" mt={4} alignSelf="center">
-            Go Back
-          </Button>
+          </h1>
+          <p className="text-gray-500">
+            Looks like you've ventured into the unknown digital realm.
+          </p>
+        </div>
+        <Link
+          to="/"
+          className="inline-flex h-10 items-center rounded-md bg-gray-900 px-8 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90 dark:focus-visible:ring-gray-300"
+        >
+          Return to website
         </Link>
-      </Center>
-    </Flex>
-  )
-}
+      </div>
+    </div>
+  );
+};
 
-export default NotFound
+export default NotFound;

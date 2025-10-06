@@ -1,104 +1,141 @@
-import { Button, DialogTitle, Text } from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { FiTrash2 } from "react-icons/fi"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { FiTrash2 } from "react-icons/fi";
 
-import { ItemsService } from "@/client"
+import { ItemsService } from "@/client";
 import {
-  DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import useCustomToast from "@/hooks/useCustomToast"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import useCustomToast from "@/hooks/useCustomToast";
+import { useIsMobile } from "@/hooks/useMobile";
 
 const DeleteItem = ({ id }: { id: string }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const [isOpen, setIsOpen] = useState(false);
+  const isDesktop = useIsMobile();
+  const queryClient = useQueryClient();
+  const { showSuccessToast, showErrorToast } = useCustomToast();
   const {
     handleSubmit,
     formState: { isSubmitting },
-  } = useForm()
+  } = useForm();
 
   const deleteItem = async (id: string) => {
-    await ItemsService.deleteItem({ id: id })
-  }
+    await ItemsService.deleteItem({ id });
+  };
 
   const mutation = useMutation({
     mutationFn: deleteItem,
     onSuccess: () => {
-      showSuccessToast("The item was deleted successfully")
-      setIsOpen(false)
+      showSuccessToast("The item was deleted successfully");
+      setIsOpen(false);
     },
     onError: () => {
-      showErrorToast("An error occurred while deleting the item")
+      showErrorToast("An error occurred while deleting the item");
     },
     onSettled: () => {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries({ queryKey: ["items"] });
     },
-  })
+  });
 
-  const onSubmit = async () => {
-    mutation.mutate(id)
+  const onSubmit = () => {
+    mutation.mutate(id);
+  };
+
+  const TriggerButton = (
+    <Button
+      variant="destructive"
+      size="sm"
+      className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors hover:bg-red-600 focus:ring-2 focus:ring-red-400"
+    >
+      <FiTrash2 className="text-lg" />
+      <span className="font-medium">Delete Item</span>
+    </Button>
+  );
+
+  if (!isDesktop) {
+    return (
+      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+        <AlertDialogTrigger asChild>{TriggerButton}</AlertDialogTrigger>
+        <AlertDialogContent>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Item</AlertDialogTitle>
+              <AlertDialogDescription>
+                This item will be permanently deleted. Are you sure? You will
+                not be able to undo this action.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <Button variant="ghost" disabled={isSubmitting}>
+                  Cancel
+                </Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button
+                  variant="destructive"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="text-white"
+                >
+                  {isSubmitting ? "Deleting..." : "Delete"}
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
   }
 
   return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      placement="center"
-      role="alertdialog"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
-    >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" colorPalette="red">
-          <FiTrash2 fontSize="16px" />
-          Delete Item
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogCloseTrigger />
-          <DialogHeader>
-            <DialogTitle>Delete Item</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <Text mb={4}>
-              This item will be permanently deleted. Are you sure? You will not
-              be able to undo this action.
-            </Text>
-          </DialogBody>
-
-          <DialogFooter gap={2}>
-            <DialogActionTrigger asChild>
-              <Button
-                variant="subtle"
-                colorPalette="gray"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-            </DialogActionTrigger>
-            <Button
-              variant="solid"
-              colorPalette="red"
-              type="submit"
-              loading={isSubmitting}
-            >
-              Delete
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Delete Item</DrawerTitle>
+          <DrawerDescription>
+            This item will be permanently deleted. Are you sure? You will not be
+            able to undo this action.
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerFooter className="pt-2">
+          <Button
+            variant="destructive"
+            onClick={onSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Deleting..." : "Delete"}
+          </Button>
+          <DrawerClose asChild>
+            <Button variant="outline" disabled={isSubmitting}>
+              Cancel
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </DialogRoot>
-  )
-}
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
 
-export default DeleteItem
+export default DeleteItem;

@@ -1,9 +1,10 @@
-import { Flex } from "@chakra-ui/react"
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import * as React from "react";
 
-import Navbar from "@/components/Common/Navbar"
-import Sidebar from "@/components/Common/Sidebar"
-import { isLoggedIn } from "@/hooks/useAuth"
+import { isLoggedIn } from "@/hooks/useAuth";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SiteHeader } from "@/components/Sidebar/SiteHeader";
+import { AppSidebar } from "@/components/Sidebar";
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
@@ -11,23 +12,36 @@ export const Route = createFileRoute("/_layout")({
     if (!isLoggedIn()) {
       throw redirect({
         to: "/login",
-      })
+      });
     }
   },
-})
+});
+
+function MainContentWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="flex w-full flex-1 flex-col overflow-auto p-6">
+      {children}
+    </main>
+  );
+}
 
 function Layout() {
   return (
-    <Flex direction="column" h="100vh">
-      <Navbar />
-      <Flex flex="1" overflow="hidden">
-        <Sidebar />
-        <Flex flex="1" direction="column" p={4} overflowY="auto">
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 64)",
+          "--header-height": "calc(var(--spacing) * 12 + 1px)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="sidebar" />
+      <SidebarInset>
+        <SiteHeader />
+        <MainContentWrapper>
           <Outlet />
-        </Flex>
-      </Flex>
-    </Flex>
-  )
+        </MainContentWrapper>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
-
-export default Layout

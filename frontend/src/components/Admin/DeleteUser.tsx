@@ -1,104 +1,94 @@
-import { Button, DialogTitle, Text } from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { FiTrash2 } from "react-icons/fi"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { FiTrash2 } from "react-icons/fi";
 
-import { UsersService } from "@/client"
+import { UsersService } from "@/client";
 import {
-  DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
+  Dialog,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import useCustomToast from "@/hooks/useCustomToast"
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import useCustomToast from "@/hooks/useCustomToast";
 
 const DeleteUser = ({ id }: { id: string }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const [isOpen, setIsOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { showSuccessToast, showErrorToast } = useCustomToast();
   const {
     handleSubmit,
     formState: { isSubmitting },
-  } = useForm()
+  } = useForm();
 
   const deleteUser = async (id: string) => {
-    await UsersService.deleteUser({ userId: id })
-  }
+    await UsersService.deleteUser({ userId: id });
+  };
 
   const mutation = useMutation({
     mutationFn: deleteUser,
     onSuccess: () => {
-      showSuccessToast("The user was deleted successfully")
-      setIsOpen(false)
+      showSuccessToast("The user was deleted successfully");
+      setIsOpen(false);
     },
     onError: () => {
-      showErrorToast("An error occurred while deleting the user")
+      showErrorToast("An error occurred while deleting the user");
     },
     onSettled: () => {
-      queryClient.invalidateQueries()
+      queryClient.invalidateQueries();
     },
-  })
+  });
 
   const onSubmit = async () => {
-    mutation.mutate(id)
-  }
+    mutation.mutate(id);
+  };
+
+  const TriggerButton = (
+    <Button
+      variant="destructive"
+      size="sm"
+      className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors hover:bg-red-600 focus:ring-2 focus:ring-red-400"
+    >
+      <FiTrash2 className="text-lg" />
+      <span className="font-medium">Delete User</span>
+    </Button>
+  );
 
   return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      placement="center"
-      role="alertdialog"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
-    >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" colorPalette="red">
-          <FiTrash2 fontSize="16px" />
-          Delete User
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
+
       <DialogContent>
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <Text mb={4}>
+            <DialogDescription>
               All items associated with this user will also be{" "}
               <strong>permanently deleted.</strong> Are you sure? You will not
               be able to undo this action.
-            </Text>
-          </DialogBody>
+            </DialogDescription>
+          </DialogHeader>
 
-          <DialogFooter gap={2}>
-            <DialogActionTrigger asChild>
-              <Button
-                variant="subtle"
-                colorPalette="gray"
-                disabled={isSubmitting}
-              >
+          <DialogFooter className="space-x-2">
+            <DialogClose asChild>
+              <Button variant="ghost" disabled={isSubmitting}>
                 Cancel
               </Button>
-            </DialogActionTrigger>
-            <Button
-              variant="solid"
-              colorPalette="red"
-              type="submit"
-              loading={isSubmitting}
-            >
+            </DialogClose>
+
+            <Button variant="destructive" type="submit" disabled={isSubmitting}>
               Delete
             </Button>
           </DialogFooter>
-          <DialogCloseTrigger />
         </form>
       </DialogContent>
-    </DialogRoot>
-  )
-}
+    </Dialog>
+  );
+};
 
-export default DeleteUser
+export default DeleteUser;
