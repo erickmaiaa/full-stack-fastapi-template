@@ -1,107 +1,90 @@
-import { Button, ButtonGroup, Text } from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-import { type ApiError, UsersService } from "@/client"
+import { type ApiError, UsersService } from "@/client";
 import {
-  DialogActionTrigger,
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
+  Dialog,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import useAuth from "@/hooks/useAuth"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import useAuth from "@/hooks/useAuth";
+import useCustomToast from "@/hooks/useCustomToast";
+import { handleError } from "@/utils";
 
 const DeleteConfirmation = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast } = useCustomToast()
+  const [isOpen, setIsOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { showSuccessToast } = useCustomToast();
   const {
     handleSubmit,
     formState: { isSubmitting },
-  } = useForm()
-  const { logout } = useAuth()
+  } = useForm();
+  const { logout } = useAuth();
 
   const mutation = useMutation({
     mutationFn: () => UsersService.deleteUserMe(),
     onSuccess: () => {
-      showSuccessToast("Your account has been successfully deleted")
-      setIsOpen(false)
-      logout()
+      showSuccessToast("Your account has been successfully deleted");
+      setIsOpen(false);
+      logout();
     },
     onError: (err: ApiError) => {
-      handleError(err)
+      handleError(err);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
-  })
+  });
 
   const onSubmit = async () => {
-    mutation.mutate()
-  }
+    mutation.mutate();
+  };
 
   return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      role="alertdialog"
-      placement="center"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
-    >
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="solid" colorPalette="red" mt={4}>
+        <Button variant="destructive" className="mt-4">
           Delete
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogCloseTrigger />
           <DialogHeader>
             <DialogTitle>Confirmation Required</DialogTitle>
           </DialogHeader>
-          <DialogBody>
-            <Text mb={4}>
+
+          <DialogDescription asChild>
+            <p className="text-sm text-muted-foreground mb-4">
               All your account data will be{" "}
               <strong>permanently deleted.</strong> If you are sure, please
-              click <strong>"Confirm"</strong> to proceed. This action cannot be
-              undone.
-            </Text>
-          </DialogBody>
+              click <strong>&quot;Confirm&quot;</strong> to proceed. This action
+              cannot be undone.
+            </p>
+          </DialogDescription>
 
-          <DialogFooter gap={2}>
-            <ButtonGroup>
-              <DialogActionTrigger asChild>
-                <Button
-                  variant="subtle"
-                  colorPalette="gray"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-              </DialogActionTrigger>
-              <Button
-                variant="solid"
-                colorPalette="red"
-                type="submit"
-                loading={isSubmitting}
-              >
-                Delete
+          <DialogFooter className="flex gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isSubmitting}>
+                Cancel
               </Button>
-            </ButtonGroup>
+            </DialogClose>
+
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              Delete
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
-    </DialogRoot>
-  )
-}
+    </Dialog>
+  );
+};
 
-export default DeleteConfirmation
+export default DeleteConfirmation;

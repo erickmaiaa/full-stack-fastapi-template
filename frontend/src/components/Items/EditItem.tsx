@@ -1,149 +1,213 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import {
-  Button,
-  ButtonGroup,
-  DialogActionTrigger,
-  Input,
-  Text,
-  VStack,
-} from "@chakra-ui/react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { type SubmitHandler, useForm } from "react-hook-form"
-import { FaExchangeAlt } from "react-icons/fa"
+  type SubmitHandler,
+  useForm,
+  type UseFormReturn,
+} from "react-hook-form";
+import { FaExchangeAlt } from "react-icons/fa";
 
-import { type ApiError, type ItemPublic, ItemsService } from "@/client"
-import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { type ApiError, type ItemPublic, ItemsService } from "@/client";
+import { Button } from "@/components/ui/button";
 import {
-  DialogBody,
-  DialogCloseTrigger,
+  Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogRoot,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog"
-import { Field } from "../ui/field"
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import useCustomToast from "@/hooks/useCustomToast";
+import { useIsMobile } from "@/hooks/useMobile";
+import { handleError } from "@/utils";
+
+import { Field } from "../ui/field";
 
 interface EditItemProps {
-  item: ItemPublic
+  item: ItemPublic;
 }
 
-interface ItemUpdateForm {
-  title: string
-  description?: string
+interface ItemUpdateFormValues {
+  title: string;
+  description?: string;
 }
 
-const EditItem = ({ item }: EditItemProps) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { showSuccessToast } = useCustomToast()
+interface EditItemFormProps {
+  form: UseFormReturn<ItemUpdateFormValues>;
+  onSubmit: SubmitHandler<ItemUpdateFormValues>;
+}
+
+const EditItemForm = ({ form, onSubmit }: EditItemFormProps) => {
   const {
     register,
     handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<ItemUpdateForm>({
+    formState: { errors },
+  } = form;
+
+  return (
+    <form
+      id={`edit-item-form-${form.getValues("title")}`}
+      onSubmit={handleSubmit(onSubmit)}
+    >
+      <div className="space-y-4 p-4 sm:p-0">
+        <Field>
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            {...register("title", {
+              required: "Title is required.",
+              minLength: {
+                value: 3,
+                message: "Title must be at least 3 characters.",
+              },
+            })}
+            placeholder="Title"
+            type="text"
+            autoComplete="off"
+          />
+          {errors.title && (
+            <p className="text-sm text-red-500">{errors.title.message}</p>
+          )}
+        </Field>
+        <Field>
+          <Label htmlFor="description">Description</Label>
+          <Input
+            id="description"
+            {...register("description")}
+            placeholder="Description"
+            type="text"
+            autoComplete="off"
+          />
+          {errors.description && (
+            <p className="text-sm text-red-500">{errors.description.message}</p>
+          )}
+        </Field>
+      </div>
+    </form>
+  );
+};
+
+const EditItem = ({ item }: EditItemProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const isDesktop = useIsMobile();
+  const queryClient = useQueryClient();
+  const { showSuccessToast } = useCustomToast();
+
+  const form = useForm<ItemUpdateFormValues>({
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      ...item,
-      description: item.description ?? undefined,
+      title: item.title,
+      description: item.description ?? "",
     },
-  })
+  });
+
+  const {
+    reset,
+    formState: { isSubmitting, isValid },
+  } = form;
 
   const mutation = useMutation({
-    mutationFn: (data: ItemUpdateForm) =>
+    mutationFn: (data: ItemUpdateFormValues) =>
       ItemsService.updateItem({ id: item.id, requestBody: data }),
     onSuccess: () => {
-      showSuccessToast("Item updated successfully.")
-      reset()
-      setIsOpen(false)
+      showSuccessToast("Item updated successfully.");
+      reset();
+      setIsOpen(false);
     },
     onError: (err: ApiError) => {
-      handleError(err)
+      handleError(err);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] })
+      queryClient.invalidateQueries({ queryKey: ["items"] });
     },
-  })
+  });
 
-  const onSubmit: SubmitHandler<ItemUpdateForm> = async (data) => {
-    mutation.mutate(data)
-  }
+  const onSubmit: SubmitHandler<ItemUpdateFormValues> = (data) => {
+    mutation.mutate(data);
+  };
 
-  return (
-    <DialogRoot
-      size={{ base: "xs", md: "md" }}
-      placement="center"
-      open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
+  const TriggerButton = (
+    <Button
+      className="flex items-center w-full gap-2 px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+      variant="outline"
     >
-      <DialogTrigger asChild>
-        <Button variant="ghost">
-          <FaExchangeAlt fontSize="16px" />
-          Edit Item
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
+      <FaExchangeAlt fontSize="16px" className="mr-1" />
+      <span className="font-medium">Edit Item</span>
+    </Button>
+  );
+
+  if (!isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Item</DialogTitle>
           </DialogHeader>
-          <DialogBody>
-            <Text mb={4}>Update the item details below.</Text>
-            <VStack gap={4}>
-              <Field
-                required
-                invalid={!!errors.title}
-                errorText={errors.title?.message}
-                label="Title"
-              >
-                <Input
-                  {...register("title", {
-                    required: "Title is required",
-                  })}
-                  placeholder="Title"
-                  type="text"
-                />
-              </Field>
-
-              <Field
-                invalid={!!errors.description}
-                errorText={errors.description?.message}
-                label="Description"
-              >
-                <Input
-                  {...register("description")}
-                  placeholder="Description"
-                  type="text"
-                />
-              </Field>
-            </VStack>
-          </DialogBody>
-
-          <DialogFooter gap={2}>
-            <ButtonGroup>
-              <DialogActionTrigger asChild>
-                <Button
-                  variant="subtle"
-                  colorPalette="gray"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-              </DialogActionTrigger>
-              <Button variant="solid" type="submit" loading={isSubmitting}>
-                Save
+          <p className="text-sm text-muted-foreground -mt-2">
+            Update the item details below.
+          </p>
+          <EditItemForm form={form} onSubmit={onSubmit} />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isSubmitting}>
+                Cancel
               </Button>
-            </ButtonGroup>
+            </DialogClose>
+            <Button
+              type="submit"
+              form={`edit-item-form-${item.id}`}
+              disabled={!isValid || isSubmitting}
+            >
+              Save
+            </Button>
           </DialogFooter>
-        </form>
-        <DialogCloseTrigger />
-      </DialogContent>
-    </DialogRoot>
-  )
-}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
-export default EditItem
+  return (
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Edit Item</DrawerTitle>
+          <p className="text-sm text-muted-foreground">
+            Update the item details below.
+          </p>
+        </DrawerHeader>
+        <EditItemForm form={form} onSubmit={onSubmit} />
+        <DrawerFooter className="pt-2">
+          <Button
+            type="submit"
+            form={`edit-item-form-${item.id}`}
+            disabled={!isValid || isSubmitting}
+          >
+            Save
+          </Button>
+          <DrawerClose asChild>
+            <Button variant="outline" disabled={isSubmitting}>
+              Cancel
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
+export default EditItem;

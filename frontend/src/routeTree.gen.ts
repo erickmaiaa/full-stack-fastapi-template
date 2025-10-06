@@ -9,38 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
-import { Route as LoginRouteImport } from './routes/login'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LayoutRouteImport } from './routes/_layout'
+import { Route as Auth_layoutRouteImport } from './routes/_auth_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as Auth_layoutSignupRouteImport } from './routes/_auth_layout/signup'
+import { Route as Auth_layoutResetPasswordRouteImport } from './routes/_auth_layout/reset-password'
+import { Route as Auth_layoutRecoverPasswordRouteImport } from './routes/_auth_layout/recover-password'
+import { Route as Auth_layoutLoginRouteImport } from './routes/_auth_layout/login'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecoverPasswordRoute = RecoverPasswordRouteImport.update({
-  id: '/recover-password',
-  path: '/recover-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Auth_layoutRoute = Auth_layoutRouteImport.update({
+  id: '/_auth_layout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LayoutIndexRoute = LayoutIndexRouteImport.update({
@@ -63,22 +60,48 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const Auth_layoutSignupRoute = Auth_layoutSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => Auth_layoutRoute,
+} as any)
+const Auth_layoutResetPasswordRoute =
+  Auth_layoutResetPasswordRouteImport.update({
+    id: '/reset-password',
+    path: '/reset-password',
+    getParentRoute: () => Auth_layoutRoute,
+  } as any)
+const Auth_layoutRecoverPasswordRoute =
+  Auth_layoutRecoverPasswordRouteImport.update({
+    id: '/recover-password',
+    path: '/recover-password',
+    getParentRoute: () => Auth_layoutRoute,
+  } as any)
+const Auth_layoutLoginRoute = Auth_layoutLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => Auth_layoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/login': typeof LoginRoute
-  '/recover-password': typeof RecoverPasswordRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/signup': typeof SignupRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/login': typeof Auth_layoutLoginRoute
+  '/recover-password': typeof Auth_layoutRecoverPasswordRoute
+  '/reset-password': typeof Auth_layoutResetPasswordRoute
+  '/signup': typeof Auth_layoutSignupRoute
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesByTo {
-  '/login': typeof LoginRoute
-  '/recover-password': typeof RecoverPasswordRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/signup': typeof SignupRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/login': typeof Auth_layoutLoginRoute
+  '/recover-password': typeof Auth_layoutRecoverPasswordRoute
+  '/reset-password': typeof Auth_layoutResetPasswordRoute
+  '/signup': typeof Auth_layoutSignupRoute
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
@@ -86,11 +109,14 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_auth_layout': typeof Auth_layoutRouteWithChildren
   '/_layout': typeof LayoutRouteWithChildren
-  '/login': typeof LoginRoute
-  '/recover-password': typeof RecoverPasswordRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/signup': typeof SignupRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
+  '/_auth_layout/login': typeof Auth_layoutLoginRoute
+  '/_auth_layout/recover-password': typeof Auth_layoutRecoverPasswordRoute
+  '/_auth_layout/reset-password': typeof Auth_layoutResetPasswordRoute
+  '/_auth_layout/signup': typeof Auth_layoutSignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
@@ -99,6 +125,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/privacy'
+    | '/terms'
     | '/login'
     | '/recover-password'
     | '/reset-password'
@@ -109,6 +137,8 @@ export interface FileRouteTypes {
     | '/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/privacy'
+    | '/terms'
     | '/login'
     | '/recover-password'
     | '/reset-password'
@@ -119,11 +149,14 @@ export interface FileRouteTypes {
     | '/'
   id:
     | '__root__'
+    | '/_auth_layout'
     | '/_layout'
-    | '/login'
-    | '/recover-password'
-    | '/reset-password'
-    | '/signup'
+    | '/privacy'
+    | '/terms'
+    | '/_auth_layout/login'
+    | '/_auth_layout/recover-password'
+    | '/_auth_layout/reset-password'
+    | '/_auth_layout/signup'
     | '/_layout/admin'
     | '/_layout/items'
     | '/_layout/settings'
@@ -131,41 +164,26 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  Auth_layoutRoute: typeof Auth_layoutRouteWithChildren
   LayoutRoute: typeof LayoutRouteWithChildren
-  LoginRoute: typeof LoginRoute
-  RecoverPasswordRoute: typeof RecoverPasswordRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SignupRoute: typeof SignupRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recover-password': {
-      id: '/recover-password'
-      path: '/recover-password'
-      fullPath: '/recover-password'
-      preLoaderRoute: typeof RecoverPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout': {
@@ -173,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof LayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth_layout': {
+      id: '/_auth_layout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof Auth_layoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout/': {
@@ -203,8 +228,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_auth_layout/signup': {
+      id: '/_auth_layout/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof Auth_layoutSignupRouteImport
+      parentRoute: typeof Auth_layoutRoute
+    }
+    '/_auth_layout/reset-password': {
+      id: '/_auth_layout/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof Auth_layoutResetPasswordRouteImport
+      parentRoute: typeof Auth_layoutRoute
+    }
+    '/_auth_layout/recover-password': {
+      id: '/_auth_layout/recover-password'
+      path: '/recover-password'
+      fullPath: '/recover-password'
+      preLoaderRoute: typeof Auth_layoutRecoverPasswordRouteImport
+      parentRoute: typeof Auth_layoutRoute
+    }
+    '/_auth_layout/login': {
+      id: '/_auth_layout/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof Auth_layoutLoginRouteImport
+      parentRoute: typeof Auth_layoutRoute
+    }
   }
 }
+
+interface Auth_layoutRouteChildren {
+  Auth_layoutLoginRoute: typeof Auth_layoutLoginRoute
+  Auth_layoutRecoverPasswordRoute: typeof Auth_layoutRecoverPasswordRoute
+  Auth_layoutResetPasswordRoute: typeof Auth_layoutResetPasswordRoute
+  Auth_layoutSignupRoute: typeof Auth_layoutSignupRoute
+}
+
+const Auth_layoutRouteChildren: Auth_layoutRouteChildren = {
+  Auth_layoutLoginRoute: Auth_layoutLoginRoute,
+  Auth_layoutRecoverPasswordRoute: Auth_layoutRecoverPasswordRoute,
+  Auth_layoutResetPasswordRoute: Auth_layoutResetPasswordRoute,
+  Auth_layoutSignupRoute: Auth_layoutSignupRoute,
+}
+
+const Auth_layoutRouteWithChildren = Auth_layoutRoute._addFileChildren(
+  Auth_layoutRouteChildren,
+)
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
@@ -224,11 +295,10 @@ const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  Auth_layoutRoute: Auth_layoutRouteWithChildren,
   LayoutRoute: LayoutRouteWithChildren,
-  LoginRoute: LoginRoute,
-  RecoverPasswordRoute: RecoverPasswordRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  SignupRoute: SignupRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
