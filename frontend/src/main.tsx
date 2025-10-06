@@ -12,6 +12,7 @@ import { routeTree } from "./routeTree.gen";
 import "./index.css";
 import { ThemeProvider } from "@/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { createMemoryHistory } from "@tanstack/react-router";
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL;
 OpenAPI.TOKEN = async () => {
@@ -33,7 +34,11 @@ const queryClient = new QueryClient({
   }),
 });
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  history: createMemoryHistory({ initialEntries: ["/"] }),
+});
+
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
