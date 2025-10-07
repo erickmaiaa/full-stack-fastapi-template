@@ -3,7 +3,7 @@ import { isLoggedIn } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_auth_layout")({
   component: AuthLayout,
-  beforeLoad: async () => {
+  beforeLoad: () => {
     if (isLoggedIn()) {
       throw redirect({
         to: "/",
@@ -19,5 +19,3 @@ function AuthLayout() {
     </div>
   );
 }
-
-export default AuthLayout;

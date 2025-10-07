@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 
 import { type ApiError, UsersService } from "@/client";
 import {
@@ -22,13 +21,9 @@ const DeleteConfirmation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { showSuccessToast } = useCustomToast();
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm();
   const { logout } = useAuth();
 
-  const mutation = useMutation({
+  const deleteUserMutation = useMutation({
     mutationFn: () => UsersService.deleteUserMe(),
     onSuccess: () => {
       showSuccessToast("Your account has been successfully deleted");
@@ -43,10 +38,6 @@ const DeleteConfirmation = () => {
     },
   });
 
-  const onSubmit = async () => {
-    mutation.mutate();
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -56,32 +47,34 @@ const DeleteConfirmation = () => {
       </DialogTrigger>
 
       <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>Confirmation Required</DialogTitle>
-          </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Confirmation Required</DialogTitle>
+        </DialogHeader>
 
-          <DialogDescription asChild>
-            <p className="text-sm text-muted-foreground mb-4">
-              All your account data will be{" "}
-              <strong>permanently deleted.</strong> If you are sure, please
-              click <strong>&quot;Confirm&quot;</strong> to proceed. This action
-              cannot be undone.
-            </p>
-          </DialogDescription>
+        <DialogDescription asChild>
+          <p className="text-sm text-muted-foreground mb-4">
+            All your account data will be <strong>permanently deleted.</strong>{" "}
+            If you are sure, please click <strong>&quot;Confirm&quot;</strong>{" "}
+            to proceed. This action cannot be undone.
+          </p>
+        </DialogDescription>
 
-          <DialogFooter className="flex gap-2">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={isSubmitting}>
-                Cancel
-              </Button>
-            </DialogClose>
-
-            <Button type="submit" variant="destructive" disabled={isSubmitting}>
-              Delete
+        <DialogFooter className="flex gap-2">
+          <DialogClose asChild>
+            <Button variant="outline" disabled={deleteUserMutation.isPending}>
+              Cancel
             </Button>
-          </DialogFooter>
-        </form>
+          </DialogClose>
+
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={deleteUserMutation.isPending}
+            onClick={() => deleteUserMutation.mutate()}
+          >
+            {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

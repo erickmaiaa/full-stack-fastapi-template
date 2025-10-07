@@ -1,19 +1,17 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  type SubmitHandler,
-  useForm,
-  type UseFormReturn,
-} from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { FaPlus } from "react-icons/fa";
+import { z } from "zod";
 
-import { type ItemCreate, ItemsService } from "@/client";
-import type { ApiError } from "@/client/core/ApiError";
+import { type ItemCreate, ItemsService, type ApiError } from "@/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -23,92 +21,91 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import useCustomToast from "@/hooks/useCustomToast";
 import { useIsMobile } from "@/hooks/useMobile";
 import { handleError } from "@/utils";
 
-import { Field } from "../ui/field";
+const itemSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters."),
+  description: z.string().min(5, "Description must be at least 5 characters."),
+});
 
-interface AddItemFormProps {
-  form: UseFormReturn<ItemCreate>;
-  onSubmit: SubmitHandler<ItemCreate>;
+type ItemFormValues = z.infer<typeof itemSchema>;
+
+interface AddItemContentProps {
+  form: ReturnType<typeof useForm<ItemFormValues>>;
+  onSubmit: SubmitHandler<ItemFormValues>;
+  isSubmitting: boolean;
 }
 
-const AddItemForm = ({ form, onSubmit }: AddItemFormProps) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = form;
-
-  return (
-    <form id="add-item-form" onSubmit={handleSubmit(onSubmit)}>
-      <div className="space-y-4 p-4 sm:p-0">
-        <Field>
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            {...register("title", {
-              required: "Title is required.",
-              minLength: {
-                value: 3,
-                message: "Title must be at least 3 characters.",
-              },
-            })}
-            type="text"
-            autoComplete="off"
-          />
-          {errors.title && (
-            <p className="text-sm text-red-500">{errors.title.message}</p>
+const AddItemContent = ({ form, onSubmit }: AddItemContentProps) => (
+  <Form {...form}>
+    <form id="add-item-form" onSubmit={form.handleSubmit(onSubmit)}>
+      <div className="grid gap-4 p-4 sm:p-0">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </Field>
-
-        <Field>
-          <Label htmlFor="description">Description</Label>
-          <Input
-            id="description"
-            {...register("description", {
-              required: "Description is required.",
-              minLength: {
-                value: 5,
-                message: "Description must be at least 5 characters.",
-              },
-            })}
-            type="text"
-            autoComplete="off"
-          />
-          {errors.description && (
-            <p className="text-sm text-red-500">{errors.description.message}</p>
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-        </Field>
+        />
       </div>
     </form>
-  );
-};
+  </Form>
+);
 
 const AddItem = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const isDesktop = useIsMobile();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { showSuccessToast } = useCustomToast();
-  const form = useForm<ItemCreate>({
+
+  const form = useForm<ItemFormValues>({
+    resolver: zodResolver(itemSchema),
     mode: "onBlur",
-    criteriaMode: "all",
     defaultValues: {
       title: "",
       description: "",
     },
   });
+
   const {
     reset,
-    formState: { isValid, isSubmitting },
+    formState: { isSubmitting },
   } = form;
 
   const mutation = useMutation({
@@ -127,7 +124,7 @@ const AddItem = () => {
     },
   });
 
-  const onSubmit: SubmitHandler<ItemCreate> = (data) => {
+  const onSubmit: SubmitHandler<ItemFormValues> = (data) => {
     mutation.mutate(data);
   };
 
@@ -138,30 +135,32 @@ const AddItem = () => {
     </Button>
   );
 
-  if (!isDesktop) {
+  const commonProps = {
+    form,
+    onSubmit,
+    isSubmitting,
+  };
+
+  if (!isMobile) {
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Item</DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a new item.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground -mt-2">
-            Fill in the details to add a new item.
-          </p>
-          <AddItemForm form={form} onSubmit={onSubmit} />
+          <AddItemContent {...commonProps} />
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={isSubmitting}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button
-              type="submit"
-              form="add-item-form"
-              disabled={!isValid || isSubmitting}
-            >
-              Save
+            <Button type="submit" form="add-item-form" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -175,18 +174,14 @@ const AddItem = () => {
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle>Add Item</DrawerTitle>
-          <p className="text-sm text-muted-foreground">
+          <DrawerDescription>
             Fill in the details to add a new item.
-          </p>
+          </DrawerDescription>
         </DrawerHeader>
-        <AddItemForm form={form} onSubmit={onSubmit} />
+        <AddItemContent {...commonProps} />
         <DrawerFooter className="pt-2">
-          <Button
-            type="submit"
-            form="add-item-form"
-            disabled={!isValid || isSubmitting}
-          >
-            Save
+          <Button type="submit" form="add-item-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
           </Button>
           <DrawerClose asChild>
             <Button variant="outline" disabled={isSubmitting}>

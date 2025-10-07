@@ -1,38 +1,38 @@
 import { useState } from "react";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-
-const PrivacyOption = ({
-  id,
-  title,
-  description,
-  checked,
-  onCheckedChange,
-}: {
-  id: string;
-  title: string;
-  description: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) => (
-  <div className="flex items-center justify-between">
-    <div className="space-y-1">
-      <p className="text-sm font-medium leading-none">{title}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
-    </div>
-    <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
-  </div>
-);
 
 export default function PrivacySettings() {
   const [shareUsageData, setShareUsageData] = useState<boolean>(false);
   const [thirdPartyCookies, setThirdPartyCookies] = useState<boolean>(false);
+
+  const PrivacyOption = ({
+    id,
+    title,
+    description,
+    checked,
+    onCheckedChange,
+  }: {
+    id: string;
+    title: string;
+    description: string;
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+  }) => (
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <p className="text-sm font-medium leading-none">{title}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
 
   const privacyOptions = [
     {

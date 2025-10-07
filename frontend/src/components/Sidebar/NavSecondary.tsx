@@ -1,5 +1,6 @@
 "use client";
 
+import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { type IconType } from "react-icons";
 
@@ -10,8 +11,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-
-import { Link } from "@tanstack/react-router";
 
 export function NavSecondary({
   items,
@@ -29,7 +28,11 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                className="[&.active]:bg-accent"
+              >
                 <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>

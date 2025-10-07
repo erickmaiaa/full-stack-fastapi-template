@@ -1,30 +1,42 @@
+import "./index.css";
+
+import ReactDOM from "react-dom/client";
+import { StrictMode } from "react";
+
 import {
   MutationCache,
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { StrictMode } from "react";
-import ReactDOM from "react-dom/client";
+import {
+  createRouter,
+  RouterProvider,
+  createBrowserHistory,
+} from "@tanstack/react-router";
+
 import { ApiError, OpenAPI } from "./client";
 import { routeTree } from "./routeTree.gen";
-import "./index.css";
-import { ThemeProvider } from "@/theme-provider";
+import { ThemeProvider } from "@/components/ui/theme";
 import { Toaster } from "@/components/ui/sonner";
-import { createMemoryHistory } from "@tanstack/react-router";
 
 OpenAPI.BASE = import.meta.env.VITE_API_URL;
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || "";
 };
 
+const router = createRouter({
+  routeTree,
+  history: createBrowserHistory(),
+});
+
 const handleApiError = (error: Error) => {
   if (error instanceof ApiError && [401, 403].includes(error.status)) {
     localStorage.removeItem("access_token");
-    window.location.href = "/login";
+    router.navigate({ to: "/login" });
   }
 };
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: handleApiError,
@@ -32,11 +44,6 @@ const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onError: handleApiError,
   }),
-});
-
-const router = createRouter({
-  routeTree,
-  history: createMemoryHistory({ initialEntries: ["/"] }),
 });
 
 declare module "@tanstack/react-router" {

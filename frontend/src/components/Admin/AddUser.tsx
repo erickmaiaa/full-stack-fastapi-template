@@ -1,21 +1,22 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Controller,
   type SubmitHandler,
   useForm,
   type UseFormReturn,
 } from "react-hook-form";
 import { FaPlus } from "react-icons/fa";
+import { z } from "zod";
 
-import { type UserCreate, UsersService } from "@/client";
-import type { ApiError } from "@/client/core/ApiError";
+import { type ApiError, type UserCreate, UsersService } from "@/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -25,147 +26,152 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import useCustomToast from "@/hooks/useCustomToast";
 import { useIsMobile } from "@/hooks/useMobile";
-import { emailPattern, handleError } from "@/utils";
+import { handleError } from "@/utils";
 
-import { Field } from "../ui/field";
+const addUserSchema = z
+  .object({
+    email: z.string().email("Invalid email address."),
+    full_name: z.string().optional(),
+    password: z.string().min(8, "Password must be at least 8 characters."),
+    confirm_password: z.string(),
+    is_superuser: z.boolean(),
+    is_active: z.boolean(),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Passwords do not match.",
+    path: ["confirm_password"],
+  });
 
-interface UserCreateForm extends UserCreate {
-  confirm_password: string;
-}
+type AddUserFormValues = z.infer<typeof addUserSchema>;
 
 interface AddUserFormProps {
-  form: UseFormReturn<UserCreateForm>;
-  onSubmit: SubmitHandler<UserCreateForm>;
+  form: UseFormReturn<AddUserFormValues>;
+  onSubmit: SubmitHandler<AddUserFormValues>;
 }
 
 const AddUserForm = ({ form, onSubmit }: AddUserFormProps) => {
-  const {
-    register,
-    control,
-    handleSubmit,
-    getValues,
-    formState: { errors },
-  } = form;
-
   return (
-    <form id="add-user-form" onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid gap-4 p-4 sm:p-0">
-        <Field>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            {...register("email", {
-              required: "Email is required",
-              pattern: emailPattern,
-            })}
-            type="email"
-          />
-          {errors.email && (
-            <p className="text-sm text-red-500">{errors.email.message}</p>
-          )}
-        </Field>
-
-        <Field>
-          <Label htmlFor="full_name">Full Name</Label>
-          <Input id="full_name" {...register("full_name")} type="text" />
-        </Field>
-
-        <Field>
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            {...register("password", {
-              required: "Password is required",
-              minLength: {
-                value: 8,
-                message: "Password must be at least 8 characters",
-              },
-            })}
-            type="password"
-          />
-          {errors.password && (
-            <p className="text-sm text-red-500">{errors.password.message}</p>
-          )}
-        </Field>
-
-        <Field>
-          <Label htmlFor="confirm_password">Confirm Password</Label>
-          <Input
-            id="confirm_password"
-            {...register("confirm_password", {
-              required: "Please confirm your password",
-              validate: (value) =>
-                value === getValues().password || "The passwords do not match",
-            })}
-            type="password"
-          />
-          {errors.confirm_password && (
-            <p className="text-sm text-red-500">
-              {errors.confirm_password.message}
-            </p>
-          )}
-        </Field>
-
-        <div className="mt-2 flex flex-col gap-4">
-          <Controller
-            control={control}
-            name="is_superuser"
+    <Form {...form}>
+      <form id="add-user-form" onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="grid gap-4 p-4 sm:p-0">
+          <FormField
+            control={form.control}
+            name="email"
             render={({ field }) => (
-              <Field>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="is_superuser"
-                    checked={!!field.value}
-                    onCheckedChange={(value) => field.onChange(!!value)}
-                  />
-                  <Label htmlFor="is_superuser" className="cursor-pointer">
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="confirm_password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="mt-2 flex flex-col gap-4">
+            <FormField
+              control={form.control}
+              name="is_superuser"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer">
                     Is superuser?
-                  </Label>
-                </div>
-              </Field>
-            )}
-          />
-          <Controller
-            control={control}
-            name="is_active"
-            render={({ field }) => (
-              <Field>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="is_active"
-                    checked={!!field.value}
-                    onCheckedChange={(value) => field.onChange(!!value)}
-                  />
-                  <Label htmlFor="is_active" className="cursor-pointer">
-                    Is active?
-                  </Label>
-                </div>
-              </Field>
-            )}
-          />
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="is_active"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer">Is active?</FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 };
 
 const AddUser = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const isDesktop = useIsMobile();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const { showSuccessToast } = useCustomToast();
-  const form = useForm<UserCreateForm>({
+
+  const form = useForm<AddUserFormValues>({
+    resolver: zodResolver(addUserSchema),
     mode: "onBlur",
-    criteriaMode: "all",
     defaultValues: {
       email: "",
       full_name: "",
@@ -175,9 +181,10 @@ const AddUser = () => {
       is_active: true,
     },
   });
+
   const {
     reset,
-    formState: { isValid, isSubmitting },
+    formState: { isSubmitting },
   } = form;
 
   const mutation = useMutation({
@@ -196,8 +203,9 @@ const AddUser = () => {
     },
   });
 
-  const onSubmit: SubmitHandler<UserCreateForm> = (data) => {
-    mutation.mutate(data);
+  const onSubmit: SubmitHandler<AddUserFormValues> = (data) => {
+    const { confirm_password, ...userData } = data;
+    mutation.mutate(userData);
   };
 
   const TriggerButton = (
@@ -207,68 +215,60 @@ const AddUser = () => {
     </Button>
   );
 
-  if (!isDesktop) {
+  if (isMobile) {
     return (
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Add User</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground -mt-2">
-            Fill in the form below to add a new user to the system.
-          </p>
-          <div className="max-h-[60vh] overflow-y-auto p-1">
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Add User</DrawerTitle>
+            <DrawerDescription>
+              Fill in the form below to add a new user to the system.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="overflow-y-auto p-4">
             <AddUserForm form={form} onSubmit={onSubmit} />
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
+          <DrawerFooter className="pt-2">
+            <Button type="submit" form="add-user-form" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+            <DrawerClose asChild>
               <Button variant="outline" disabled={isSubmitting}>
                 Cancel
               </Button>
-            </DialogClose>
-            <Button
-              type="submit"
-              form="add-user-form"
-              disabled={!isValid || isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader className="text-left">
-          <DrawerTitle>Add User</DrawerTitle>
-          <p className="text-sm text-muted-foreground">
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Add User</DialogTitle>
+          <DialogDescription>
             Fill in the form below to add a new user to the system.
-          </p>
-        </DrawerHeader>
-        <div className="overflow-y-auto">
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto p-1">
           <AddUserForm form={form} onSubmit={onSubmit} />
         </div>
-        <DrawerFooter className="pt-2">
-          <Button
-            type="submit"
-            form="add-user-form"
-            disabled={!isValid || isSubmitting}
-          >
-            {isSubmitting ? "Saving..." : "Save"}
-          </Button>
-          <DrawerClose asChild>
+        <DialogFooter>
+          <DialogClose asChild>
             <Button variant="outline" disabled={isSubmitting}>
               Cancel
             </Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+          </DialogClose>
+          <Button type="submit" form="add-user-form" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

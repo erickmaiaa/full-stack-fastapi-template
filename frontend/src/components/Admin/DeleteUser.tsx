@@ -1,93 +1,114 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { FiTrash2 } from "react-icons/fi";
 
-import { UsersService } from "@/client";
+import { type ApiError, UsersService } from "@/client";
 import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import useCustomToast from "@/hooks/useCustomToast";
+import { useIsMobile } from "@/hooks/useMobile";
+import { handleError } from "@/utils";
 
 const DeleteUser = ({ id }: { id: string }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const { showSuccessToast, showErrorToast } = useCustomToast();
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm();
+  const { showSuccessToast } = useCustomToast();
 
-  const deleteUser = async (id: string) => {
-    await UsersService.deleteUser({ userId: id });
-  };
-
-  const mutation = useMutation({
-    mutationFn: deleteUser,
+  const deleteUserMutation = useMutation({
+    mutationFn: () => UsersService.deleteUser({ userId: id }),
     onSuccess: () => {
       showSuccessToast("The user was deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setIsOpen(false);
     },
-    onError: () => {
-      showErrorToast("An error occurred while deleting the user");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries();
+    onError: (err: ApiError) => {
+      handleError(err);
     },
   });
-
-  const onSubmit = async () => {
-    mutation.mutate(id);
-  };
 
   const TriggerButton = (
     <Button
       variant="destructive"
-      size="sm"
-      className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors hover:bg-red-600 focus:ring-2 focus:ring-red-400"
+      className="flex items-center w-full gap-2 px-4 py-2 rounded-md"
     >
       <FiTrash2 className="text-lg" />
       <span className="font-medium">Delete User</span>
     </Button>
   );
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
+  const dialogDescription =
+    "All items associated with this user will also be permanently deleted. Are you sure? You will not be able to undo this action.";
 
-      <DialogContent>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
-            <DialogDescription>
-              All items associated with this user will also be{" "}
-              <strong>permanently deleted.</strong> Are you sure? You will not
-              be able to undo this action.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter className="space-x-2">
-            <DialogClose asChild>
-              <Button variant="ghost" disabled={isSubmitting}>
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Delete User</DrawerTitle>
+            <DrawerDescription>{dialogDescription}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter className="pt-2">
+            <Button
+              variant="destructive"
+              onClick={() => deleteUserMutation.mutate()}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" disabled={deleteUserMutation.isPending}>
                 Cancel
               </Button>
-            </DialogClose>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
-            <Button variant="destructive" type="submit" disabled={isSubmitting}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+  return (
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger asChild>{TriggerButton}</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete User</AlertDialogTitle>
+          <AlertDialogDescription>{dialogDescription}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleteUserMutation.isPending}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => deleteUserMutation.mutate()}
+            disabled={deleteUserMutation.isPending}
+          >
+            {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 
