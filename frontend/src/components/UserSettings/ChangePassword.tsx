@@ -1,6 +1,8 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { FiLock } from "react-icons/fi";
+import { z } from "zod";
 
 import { type ApiError, type UpdatePassword, UsersService } from "@/client";
 import { Button } from "@/components/ui/button";
@@ -21,17 +23,28 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import useCustomToast from "@/hooks/useCustomToast";
-import { confirmPasswordRules, handleError, passwordRules } from "@/utils";
+import { handleError } from "@/utils";
 
-interface UpdatePasswordForm extends UpdatePassword {
-  confirm_password: string;
-}
+const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "Current password is required."),
+    new_password: z
+      .string()
+      .min(8, "Password must be at least 8 characters long."),
+    confirm_password: z.string(),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Passwords do not match.",
+    path: ["confirm_password"],
+  });
+
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 const ChangePassword = () => {
   const { showSuccessToast } = useCustomToast();
-  const form = useForm<UpdatePasswordForm>({
+  const form = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
     mode: "onBlur",
-    criteriaMode: "all",
     defaultValues: {
       current_password: "",
       new_password: "",
@@ -56,8 +69,9 @@ const ChangePassword = () => {
     },
   });
 
-  const onSubmit: SubmitHandler<UpdatePasswordForm> = async (data) => {
-    mutation.mutate(data);
+  const onSubmit: SubmitHandler<ChangePasswordFormValues> = async (data) => {
+    const { confirm_password, ...updateData } = data;
+    mutation.mutate(updateData);
   };
 
   return (
@@ -71,7 +85,6 @@ const ChangePassword = () => {
             <FormField
               control={form.control}
               name="current_password"
-              rules={passwordRules()}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
@@ -88,7 +101,6 @@ const ChangePassword = () => {
             <FormField
               control={form.control}
               name="new_password"
-              rules={passwordRules()}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
@@ -105,7 +117,6 @@ const ChangePassword = () => {
             <FormField
               control={form.control}
               name="confirm_password"
-              rules={confirmPasswordRules(form.getValues)}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>

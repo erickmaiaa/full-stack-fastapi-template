@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { FiTrash2 } from "react-icons/fi";
 
-import { ItemsService } from "@/client";
+import { type ApiError, ItemsService } from "@/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,38 +27,25 @@ import {
 } from "@/components/ui/drawer";
 import useCustomToast from "@/hooks/useCustomToast";
 import { useIsMobile } from "@/hooks/useMobile";
+import { handleError } from "@/utils";
 
 const DeleteItem = ({ id }: { id: string }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const isDesktop = useIsMobile();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
-  const { showSuccessToast, showErrorToast } = useCustomToast();
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm();
+  const { showSuccessToast } = useCustomToast();
 
-  const deleteItem = async (id: string) => {
-    await ItemsService.deleteItem({ id });
-  };
-
-  const mutation = useMutation({
-    mutationFn: deleteItem,
+  const deleteItemMutation = useMutation({
+    mutationFn: () => ItemsService.deleteItem({ id }),
     onSuccess: () => {
       showSuccessToast("The item was deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["items"] });
       setIsOpen(false);
     },
-    onError: () => {
-      showErrorToast("An error occurred while deleting the item");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
+    onError: (err: ApiError) => {
+      handleError(err);
     },
   });
-
-  const onSubmit = () => {
-    mutation.mutate(id);
-  };
 
   const TriggerButton = (
     <Button
@@ -72,69 +58,61 @@ const DeleteItem = ({ id }: { id: string }) => {
     </Button>
   );
 
-  if (!isDesktop) {
+  if (isMobile) {
     return (
-      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-        <AlertDialogTrigger asChild>{TriggerButton}</AlertDialogTrigger>
-        <AlertDialogContent>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Item</AlertDialogTitle>
-              <AlertDialogDescription>
-                This item will be permanently deleted. Are you sure? You will
-                not be able to undo this action.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel asChild>
-                <Button variant="ghost" disabled={isSubmitting}>
-                  Cancel
-                </Button>
-              </AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <Button
-                  variant="destructive"
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="text-white"
-                >
-                  {isSubmitting ? "Deleting..." : "Delete"}
-                </Button>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </form>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Delete Item</DrawerTitle>
+            <DrawerDescription>
+              This item will be permanently deleted. Are you sure? You will not
+              be able to undo this action.
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter className="pt-2">
+            <Button
+              variant="destructive"
+              onClick={() => deleteItemMutation.mutate()}
+              disabled={deleteItemMutation.isPending}
+            >
+              {deleteItemMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" disabled={deleteItemMutation.isPending}>
+                Cancel
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader className="text-left">
-          <DrawerTitle>Delete Item</DrawerTitle>
-          <DrawerDescription>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger asChild>{TriggerButton}</AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Item</AlertDialogTitle>
+          <AlertDialogDescription>
             This item will be permanently deleted. Are you sure? You will not be
             able to undo this action.
-          </DrawerDescription>
-        </DrawerHeader>
-        <DrawerFooter className="pt-2">
-          <Button
-            variant="destructive"
-            onClick={onSubmit}
-            disabled={isSubmitting}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleteItemMutation.isPending}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => deleteItemMutation.mutate()}
+            disabled={deleteItemMutation.isPending}
           >
-            {isSubmitting ? "Deleting..." : "Delete"}
-          </Button>
-          <DrawerClose asChild>
-            <Button variant="outline" disabled={isSubmitting}>
-              Cancel
-            </Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+            {deleteItemMutation.isPending ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

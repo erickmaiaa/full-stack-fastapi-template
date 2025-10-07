@@ -1,14 +1,14 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import * as React from "react";
 
-import { isLoggedIn } from "@/hooks/useAuth";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SiteHeader } from "@/components/Sidebar/SiteHeader";
 import { AppSidebar } from "@/components/Sidebar";
+import { SiteHeader } from "@/components/Sidebar/SiteHeader";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { isLoggedIn } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_layout")({
   component: Layout,
-  beforeLoad: async () => {
+  beforeLoad: () => {
     if (!isLoggedIn()) {
       throw redirect({
         to: "/login",
@@ -17,15 +17,13 @@ export const Route = createFileRoute("/_layout")({
   },
 });
 
-function MainContentWrapper({ children }: { children: React.ReactNode }) {
-  return (
+function Layout() {
+  const MainContentWrapper = ({ children }: { children: React.ReactNode }) => (
     <main className="flex w-full flex-1 flex-col overflow-auto p-6">
       {children}
     </main>
   );
-}
 
-function Layout() {
   return (
     <SidebarProvider
       style={

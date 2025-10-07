@@ -8,7 +8,11 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const PendingItems = () => (
+interface PendingTableProps {
+  rowCount?: number;
+}
+
+const PendingTable = ({ rowCount = 10 }: PendingTableProps) => (
   <Table>
     <TableHeader>
       <TableRow>
@@ -28,7 +32,7 @@ const PendingItems = () => (
     </TableHeader>
 
     <TableBody>
-      {[...Array(10)].map((_, index) => (
+      {Array.from({ length: rowCount }).map((_, index) => (
         <TableRow key={index}>
           <TableCell>
             <Skeleton className="h-4 w-10" />
@@ -48,4 +52,4 @@ const PendingItems = () => (
   </Table>
 );
 
-export default PendingItems;
+export default PendingTable;

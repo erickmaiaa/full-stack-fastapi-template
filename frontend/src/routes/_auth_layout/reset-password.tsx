@@ -1,20 +1,18 @@
-import * as React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import {
   createFileRoute,
-  useNavigate,
   Link,
   redirect,
+  useNavigate,
 } from "@tanstack/react-router";
+import * as React from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
+import { z } from "zod";
 
-import { LoginService, type ApiError, type NewPassword } from "@/client";
-import useCustomToast from "@/hooks/useCustomToast";
-import { passwordRules, confirmPasswordRules, handleError } from "@/utils";
-import { cn } from "@/lib/utils";
-import { buttonVariants, Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { LoginService, type ApiError } from "@/client";
 import { Icons } from "@/components/icons";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -23,25 +21,124 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import useCustomToast from "@/hooks/useCustomToast";
+import { cn } from "@/lib/utils";
+import { handleError } from "@/utils";
 
-const token = new URLSearchParams(window.location.search).get("token");
+const resetPasswordSearchSchema = z.object({
+  token: z.string(),
+});
 
-interface NewPasswordForm extends NewPassword {
-  confirm_password: string;
-}
+const resetPasswordSchema = z
+  .object({
+    new_password: z
+      .string()
+      .min(8, "Password must be at least 8 characters long."),
+    confirm_password: z.string(),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Passwords do not match.",
+    path: ["confirm_password"],
+  });
+
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export const Route = createFileRoute("/_auth_layout/reset-password")({
   component: ResetPassword,
-  beforeLoad: async () => {
-    if (!token) {
-      throw redirect({
-        to: "/",
-      });
-    }
-  },
+  validateSearch: (search) =>
+    resetPasswordSearchSchema.parse(search).token
+      ? resetPasswordSearchSchema.parse(search)
+      : redirect({ to: "/" }),
 });
 
+function ResetPasswordForm({
+  token,
+  className,
+  ...props
+}: React.ComponentProps<"div"> & { token: string }) {
+  const form = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    mode: "onBlur",
+    defaultValues: {
+      new_password: "",
+      confirm_password: "",
+    },
+  });
+  const {
+    handleSubmit,
+    formState: { isSubmitting },
+    reset,
+  } = form;
+  const { showSuccessToast } = useCustomToast();
+  const navigate = useNavigate();
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: ResetPasswordFormValues) =>
+      LoginService.resetPassword({
+        requestBody: { new_password: data.new_password, token },
+      }),
+    onSuccess: () => {
+      showSuccessToast("Password updated successfully.");
+      reset();
+      navigate({ to: "/login" });
+    },
+    onError: (err: ApiError) => {
+      handleError(err);
+    },
+  });
+
+  const onSubmit: SubmitHandler<ResetPasswordFormValues> = (data) => {
+    resetPasswordMutation.mutate(data);
+  };
+
+  return (
+    <div className={cn("grid gap-6", className)} {...props}>
+      <Form {...form}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid gap-2">
+            <FormField
+              control={form.control}
+              name="new_password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" disabled={isSubmitting} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirm_password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" disabled={isSubmitting} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button disabled={isSubmitting} className="mt-2">
+              {isSubmitting && (
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Reset Password
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
+  );
+}
+
 function ResetPassword() {
+  const { token } = Route.useSearch() as { token: string };
+
   return (
     <div className="relative grid h-screen flex-1 shrink-0 items-center md:grid lg:max-w-none lg:px-0">
       <Link
@@ -63,94 +160,9 @@ function ResetPassword() {
               Enter your new password below
             </p>
           </div>
-          <ResetPasswordForm />
+          <ResetPasswordForm token={token} />
         </div>
       </div>
-    </div>
-  );
-}
-
-export function ResetPasswordForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const form = useForm<NewPasswordForm>({
-    mode: "onBlur",
-    criteriaMode: "all",
-    defaultValues: {
-      new_password: "",
-      confirm_password: "",
-    },
-  });
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-    reset,
-  } = form;
-  const { showSuccessToast } = useCustomToast();
-  const navigate = useNavigate();
-
-  const resetPasswordMutation = useMutation({
-    mutationFn: (data: NewPassword) =>
-      LoginService.resetPassword({
-        requestBody: { new_password: data.new_password, token: token || "" },
-      }),
-    onSuccess: () => {
-      showSuccessToast("Password updated successfully.");
-      reset();
-      navigate({ to: "/login" });
-    },
-    onError: (err: ApiError) => {
-      handleError(err);
-    },
-  });
-
-  const onSubmit: SubmitHandler<NewPasswordForm> = (data) => {
-    resetPasswordMutation.mutate(data);
-  };
-
-  return (
-    <div className={cn("grid gap-6", className)} {...props}>
-      <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-2">
-            <FormField
-              control={form.control}
-              name="new_password"
-              rules={passwordRules()}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" disabled={isSubmitting} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirm_password"
-              rules={confirmPasswordRules(form.getValues)}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" disabled={isSubmitting} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button disabled={isSubmitting} className="mt-2">
-              {isSubmitting && (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Reset Password
-            </Button>
-          </div>
-        </form>
-      </Form>
     </div>
   );
 }

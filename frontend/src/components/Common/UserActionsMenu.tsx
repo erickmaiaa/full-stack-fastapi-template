@@ -1,13 +1,16 @@
 import { BsThreeDotsVertical } from "react-icons/bs";
+
 import type { UserPublic } from "@/client";
 import DeleteUser from "../Admin/DeleteUser";
 import EditUser from "../Admin/EditUser";
+import { Button } from "../ui/button";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Button } from "../ui/button";
 
 interface UserActionsMenuProps {
   user: UserPublic;
@@ -22,9 +25,14 @@ export const UserActionsMenu = ({ user, disabled }: UserActionsMenuProps) => {
           <BsThreeDotsVertical />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="space-y-2">
-        <EditUser user={user} />
-        <DeleteUser id={user.id} />
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <EditUser user={user} />
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <DeleteUser id={user.id} />
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
