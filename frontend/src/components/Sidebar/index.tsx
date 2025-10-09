@@ -18,9 +18,24 @@ import { NavMain } from "./NavMain";
 import { NavSecondary } from "./NavSecondary";
 import { NavUser } from "./NavUser";
 import { sidebarData } from "./data";
+import type { IconType } from "react-icons/lib";
+import { MdPeople } from "react-icons/md";
+
+interface Item {
+  icon: IconType;
+  title: string;
+  url: string;
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
+
+  const finalItems: Item[] = user?.is_superuser
+    ? [
+        ...sidebarData.navMain,
+        { icon: MdPeople, title: "Admin", url: "/admin" },
+      ]
+    : sidebarData.navMain;
 
   return (
     <Sidebar className="border-r" {...props}>
@@ -40,7 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarData.navMain} />
+        <NavMain items={finalItems} />
         <NavSecondary items={sidebarData.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

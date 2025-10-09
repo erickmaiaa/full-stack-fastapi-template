@@ -6,7 +6,6 @@ import {
   MdHelpOutline,
   MdLightbulbOutline,
   MdList,
-  MdPeople,
   MdSearch,
   MdSettings,
   MdStorage,
@@ -24,11 +23,6 @@ export const sidebarData = {
       title: "Items",
       url: "/items",
       icon: MdList,
-    },
-    {
-      title: "Admin",
-      url: "/admin",
-      icon: MdPeople,
     },
   ],
   navClouds: [
